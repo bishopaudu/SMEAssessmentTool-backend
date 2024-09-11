@@ -1,6 +1,6 @@
 
 // controllers/responseController.js
-const Response = require('../models/responseModel');
+const Response = require('../models/responsemodel');
 const mongoose = require('mongoose');
 const { Parser } = require('json2csv');
 
