@@ -52,20 +52,33 @@ exports.submitResponse = async (req, res) => {
 // @access  Admin
 exports.exportResponsesAsCSV = async (req, res) => {
   try {
+    // Fetch responses and populate the question field in answers
     const responses = await Response.find().populate('answers.questionId');
 
+    // Flatten responses for the CSV, extracting the necessary fields
+    const flattenedResponses = responses.map((response) =>
+      response.answers.map((answer) => ({
+        question: answer.questionId?.question || 'N/A', // Get the question text or 'N/A' if missing
+        selectedOption: answer.selectedOption || 'No option selected', // Get selected option
+        createdAt: new Date(response.createdAt).toLocaleString(), // Format date as human-readable
+      }))
+    ).flat(); // Flatten the array of arrays
+
     // Define fields for the CSV
-    const fields = ['_id', 'answers.questionId.question', 'answers.selectedOption', 'createdAt'];
+    const fields = ['question', 'selectedOption', 'createdAt'];
     const opts = { fields };
 
+    // Parse the data into CSV format
     const parser = new Parser(opts);
-    const csv = parser.parse(responses);
+    const csv = parser.parse(flattenedResponses);
 
-    // Set headers for downloading CSV
+    // Set headers and send the CSV file
     res.header('Content-Type', 'text/csv');
     res.attachment('responses.csv');
     return res.send(csv);
   } catch (error) {
+    console.error('Error exporting responses:', error);
     res.status(500).json({ message: 'Error exporting responses' });
   }
 };
+
